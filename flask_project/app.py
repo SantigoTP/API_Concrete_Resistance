@@ -5,7 +5,6 @@ import pandas as pd
 
 app = Flask(__name__)
 
-# Asegúrate de que el nombre del archivo pkl sea exactamente este
 modelo = joblib.load('modelo_concreto.pkl')
 
 @app.route('/')
@@ -16,11 +15,9 @@ def home():
 def predict():
     if request.method == 'POST':
         try:
-            # 1. Extraer datos usando .get() para evitar el error 400
-            # Si el nombre en el HTML no coincide, aquí recibiremos un None
             datos_form = {
                 'cement': request.form.get('cement'),
-                'blast_furnace_salag': request.form.get('slag'), # Nombre corregido según notebook
+                'blast_furnace_salag': request.form.get('slag'),
                 'fly_ash': request.form.get('fly_ash'),
                 'water': request.form.get('water'),
                 'superplasticizer': request.form.get('superplasticizer'),
@@ -29,14 +26,11 @@ def predict():
                 'age': request.form.get('age')
             }
 
-            # 2. VALIDACIÓN: Verificar si algún campo llegó vacío (causa del Error 400)
             for clave, valor in datos_form.items():
                 if valor is None or valor == '':
-                    # Esto te dirá exactamente qué campo falta en el HTML
                     return render_template('index.html', 
-                                         prediction_text=f'Error: El campo "{clave}" no se recibió. Revisa el "name" en tu HTML.')
+                                         prediction_text=f'Error: El campo "{clave}" no se recibió.')
 
-            # 3. Convertir a flotantes para el cálculo
             cement = float(datos_form['cement'])
             slag = float(datos_form['blast_furnace_salag'])
             fly_ash = float(datos_form['fly_ash'])
@@ -46,10 +40,8 @@ def predict():
             fine_agg = float(datos_form['fine_aggregate'])
             age = float(datos_form['age'])
 
-            # 4. Transformación logarítmica (Procesamiento de tu notebook)
             log_age = np.log(age) if age > 0 else 0
 
-            # 5. Crear DataFrame con nombres de columnas exactos del entrenamiento
             input_data = pd.DataFrame([[
                 cement, slag, fly_ash, water, 
                 superplasticizer, coarse_agg, fine_agg, log_age
@@ -58,7 +50,7 @@ def predict():
                 'superplasticizer', 'coarse_aggregate', 'fine_aggregate', 'log_age'
             ])
 
-            # 6. Predicción
+            #Predicción
             prediccion = modelo.predict(input_data)[0]
 
             return render_template('index.html', 
@@ -66,7 +58,6 @@ def predict():
                                    datos_previos=request.form)
 
         except Exception as e:
-            # Captura errores de conversión (letras en vez de números) o fallos del modelo
             return render_template('index.html', 
                                    prediction_text=f'Error detallado: {str(e)}')
 
